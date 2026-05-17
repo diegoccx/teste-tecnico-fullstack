@@ -1,118 +1,264 @@
-# Full Stack Challenge: Multi-Tenant Invitation & Micro-CMS System
+# Intellux Drive
 
-## 📝 Descrição do Projeto - Intellux Drive
-O objetivo deste desafio é desenvolver uma aplicação funcional de gerenciamento de arquivos (Micro-Drive) com suporte a múltiplos níveis de acesso (Multi-tenant) e um sistema de convites hierárquico. A aplicação deve permitir que administradores gerenciem a entrada de novas organizações e que os membros destas façam upload de arquivos de texto e imagens, compartilhem-nos com colegas da mesma organização e mantenham o isolamento total de dados entre empresas distintas.
+Sistema de gerenciamento de arquivos multi-tenant com hierarquia de convites. Cada organização tem isolamento completo de dados — arquivos, usuários e compartilhamentos nunca cruzam boundaries entre tenants.
 
-## ⏱️ Prazo e Condições de Entrega
-* **Tempo Limite:** Máximo de 7 dias corridos a partir do recebimento deste briefing.
-* **Repositório:** Código hospedado no GitHub com commits organizados.
-
----
-
-## 🛠️ Stack Tecnológica
-* **Frontend:** React (v18+), Sass.
-* **Backend:** Node.js com NestJS.
-* **Banco de Dados:** MySQL.
-* **Infraestrutura (Opcional/Diferencial):** Uso de serviços da AWS (Free Tier).
+> **Deploy:** [https://intellux-drive.vercel.app](https://intellux-drive.vercel.app) · API: [https://intellux-drive-api.up.railway.app](https://intellux-drive-api.up.railway.app)
+>
+> *(URLs de exemplo — substitua com seus links reais após o deploy)*
 
 ---
 
-## ⚙️ Requisitos Funcionais
+## Stack
 
-### 1. Hierarquia de Usuários e Convites
-* **Nível 1: Super Admin (Plataforma)**
-  * Possui acesso exclusivo ao painel de controle da plataforma.
-  * Funcionalidade de enviar convites por e-mail/token para novos Owners.
-  * **Não** possui acesso e não visualiza o conteúdo das organizações.
-* **Nível 2: Owner (Dono de Organização)**
-  * Recebe o convite do Super Admin e realiza o cadastro inicial (ativação da conta e da organização).
-  * Envia convites para novos Users vinculados diretamente à sua própria organização.
-  * Gerencia o time e possui permissões administrativas sobre o conteúdo.
-* **Nível 3: User (Membro do Time)**
-  * Recebe o convite do Owner e realiza o cadastro de perfil.
-  * Faz upload de arquivos de texto e imagens e pode compartilhá-los com outros membros da mesma organização.
-
-### 2. Fluxo de Convite Criptográfico
-* Geração de tokens únicos, seguros (UUIDv4 ou hashes assinados) e expiráveis (máximo de 48 horas).
-* Rota pública no Frontend que consome o token via query param para renderizar a tela de ativação de perfil.
-
-### 3. Matriz de Controle de Acesso (RBAC) & Isolamento de Dados (Multi-tenancy)
-O sistema deve garantir o isolamento horizontal absoluto de dados entre organizações diferentes através do ID da organização (`organization_id`). Além disso, deve respeitar estritamente a matriz de permissões abaixo no Frontend (ocultando componentes) e no Backend (retornando `HTTP 403 Forbidden`):
-
-> **Regra de visibilidade de arquivos:** Um **User** enxerga apenas os arquivos que ele próprio enviou, mais quaisquer arquivos que outros membros da **mesma organização** tenham compartilhado explicitamente com ele. O **Owner** enxerga todo o conteúdo da organização. O compartilhamento é estritamente intra-organizacional — nenhum arquivo pode ser compartilhado com membros de outra organização. O isolamento deve ser aplicado tanto nas queries do backend (filtro por `created_by` e tabela de permissões de compartilhamento) quanto na renderização condicional do frontend.
-
-
-| Recurso | Ação | Super Admin | Owner | User |
-| :--- | :--- | :--- | :--- | :--- |
-| **Organizações & Convites Globais** | Criar/Enviar | ✅ Permitido | ❌ Negado | ❌ Negado |
-| **Convites Internos da Org** | Criar/Enviar | ❌ Negado | ✅ Permitido | ❌ Negado |
-| **Arquivos (Texto / Imagem)** | **Upload** (Enviar) | ❌ Negado | ✅ Permitido | ✅ Permitido |
-| **Arquivos (Texto / Imagem)** | **Read** (Visualizar) | ❌ Negado | ✅ Permitido (Toda a Org) | ✅ Permitido (Próprios + Compartilhados consigo) |
-| **Arquivos (Texto / Imagem)** | **Update** (Editar metadados) | ❌ Negado | ✅ Permitido (Sua Org) | ✅ Permitido (Apenas os seus) |
-| **Arquivos (Texto / Imagem)** | **Delete** (Excluir) | ❌ Negado | ✅ Permitido (Qualquer um da Org) | ❌ Negado |
-| **Compartilhamento** | **Compartilhar** | ❌ Negado | ✅ Permitido (Intra-org) | ✅ Permitido (Apenas os seus, intra-org) |
-| **Filtros (Data / Usuário)** | **Aplicar** | ❌ Negado | ✅ Disponível (Toda a Org) | ✅ Disponível (Apenas nos seus e compartilhados) |
+| Camada | Tecnologia |
+|---|---|
+| Backend | NestJS 10 + TypeORM + MySQL 8 |
+| Frontend | React 18 + Vite + Sass + React Hook Form + Zod |
+| Armazenamento | AWS S3 (Free Tier) com fallback para disco local |
+| Autenticação | JWT + Passport |
+| Deploy | Vercel (frontend) + Railway/AWS EC2 (backend) |
 
 ---
 
-## 🎨 Telas do Frontend
+## Rodando localmente
 
-1. **Tela de Login:** Autenticação padrão utilizando e-mail e senha com JWT.
-2. **Dashboard do Super Admin:**
-   * Visualização de métricas de volumetria global (total de organizações ativas, taxa global de aceite de convites).
-   * Formulário para envio de novos convites de Owners.
-3. **Dashboard do Owner (Gestão de Time):**
-   * Visualização do total de usuários ativos na organização e status dos convites enviados (pendentes vs. aceitos).
-   * Formulário para envio de novos convites para a sua organização.
-4. **Home da Plataforma (Área de Trabalho de Arquivos):**
-   * Tela compartilhada entre **Owner** e **User** com renderização condicional baseada na role.
-   * **Listagem de Arquivos de Texto:** Exibe os arquivos `.txt` / `.md` enviados via upload (não há editor interno — o arquivo é enviado do dispositivo do usuário). Deve exibir nome do arquivo, autor e data de envio. Inclui barra de pesquisa por nome.
-   * **Grid de Imagens:** Visualização das imagens enviadas via upload em formato responsivo (mosaico ou grid).
-   * **Upload de Arquivos:** Botão/Modal acessível por Owners e Users para selecionar e enviar arquivos do dispositivo (texto ou imagem) diretamente para o servidor.
-   * **Compartilhamento Intra-organizacional:** Cada arquivo enviado pode ser compartilhado com um ou mais membros da **mesma organização**. O compartilhamento é feito via modal de seleção de membros (somente membros da org aparecem na lista). Arquivos compartilhados aparecem na listagem do destinatário com indicação visual de que foram compartilhados por outro membro.
-   * **Filtros:** Painel de filtros disponível na listagem de arquivos de texto e na galeria de imagens:
-     * **Por Data:** Seleção de intervalo (data inicial e data final) para filtrar pelo campo `uploaded_at`.
-     * **Por Usuário:** Disponível **somente para o Owner**; permite selecionar um membro da organização e visualizar apenas os arquivos enviados por ele.
-   * **Isolamento de visibilidade:** Um **User** visualiza somente os arquivos que ele mesmo enviou mais os que foram compartilhados com ele por membros da mesma org. Um **Owner** visualiza todos os arquivos da organização e pode usar os filtros acima para segmentar a visualização.
+### Pré-requisitos
+
+- Node.js v18+
+- MySQL 8.0 rodando na porta 3306
+
+### 1. Banco de dados
+
+Se estiver usando Docker:
+
+```bash
+docker compose up -d
+```
+
+Se já tiver MySQL instalado:
+
+```bash
+# Windows (como Admin)
+net start MySQL80
+
+# Criar banco e usuário
+mysql -u root -pSUASENHA -e "
+  CREATE DATABASE IF NOT EXISTS intellux_drive CHARACTER SET utf8mb4;
+  CREATE USER IF NOT EXISTS 'intellux'@'%' IDENTIFIED BY 'intellux123';
+  GRANT ALL PRIVILEGES ON intellux_drive.* TO 'intellux'@'%';
+  FLUSH PRIVILEGES;
+"
+```
+
+Ou use o script utilitário incluído:
+
+```bash
+cd backend
+node setup_db.js
+```
+
+### 2. Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edite .env com suas credenciais de banco
+
+# Criar o Super Admin inicial
+npm run seed
+
+# Subir em modo dev (watch)
+npm run start:dev
+```
+
+API: `http://localhost:3001`  
+Swagger: `http://localhost:3001/api/docs`
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App: `http://localhost:5173`
 
 ---
 
-## 🔒 Requisitos Não Funcionais & Arquitetura
+## Seed — Super Admin
 
-### Backend (NestJS + MySQL)
-* **ORM:** Uso obrigatório de TypeORM. Migrations devem ser configuradas para estruturar o banco.
-* **Segurança:** Implementação de Guards do NestJS para validação do JWT e checagem de Roles/Tenancy.
-* **Validação:** Uso de `class-validator` e `class-transformer` para sanear payloads de entrada.
-* **Upload de Arquivos:** O salvamento de arquivos (textos e imagens) deve ser feito via upload real do dispositivo do usuário. O armazenamento pode ser local no disco (estáticos servidos pelo próprio servidor) ou em serviço de object storage (AWS S3 ou equivalente, considerado diferencial). Não deve haver editor de texto interno — o conteúdo é sempre enviado como arquivo.
-* **Compartilhamento:** Implementar uma tabela de permissões de compartilhamento (`file_shares`) relacionando arquivo × membro destinatário, garantindo que o destinatário sempre pertença à mesma organização do proprietário do arquivo (validado no backend).
-
-### Frontend (React)
-* **Gerenciamento de Estado:** Uso de Context API ou Zustand para o estado global de autenticação.
-* **Formulários:** Validação robusta com React Hook Form integrado a Zod ou Yup.
-* **Estilização:** Por conta do candidato.
+```bash
+cd backend
+npm run seed
+# Cria: email=admin@intellux.com | senha=Admin@123456
+```
 
 ---
 
-## 📊 Critérios de Avaliação
-* **Arquitetura de Software:** Separação de responsabilidades no NestJS, modularidade e componentização limpa no React.
-* **Conceito de Multi-tenancy:** Garantia lógica de que nenhuma brecha de API permita que um usuário veja ou altere dados de outra organização.
-* **Tratamento de Erros:** Respostas HTTP adequadas no backend e tratamento visual de falhas/erros de validação no frontend.
-* **Qualidade do Código:** Uso correto do TypeScript, tipagem estrita, legibilidade e aplicação de princípios Clean Code.
+## Variáveis de ambiente
+
+### Backend (`backend/.env`)
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=intellux
+DB_PASSWORD=intellux123
+DB_DATABASE=intellux_drive
+
+JWT_SECRET=troque_por_uma_string_longa_e_aleatoria
+JWT_EXPIRES_IN=7d
+
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=10485760
+
+PORT=3001
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+
+# AWS S3 — deixe vazio para usar armazenamento local
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=
+```
+
+### Frontend (`frontend/.env`)
+
+```env
+# Deixe vazio em dev — o proxy do Vite cuida disso
+# Em produção (Vercel), aponte para a URL da API
+VITE_API_URL=
+```
 
 ---
 
-## 📦 Formato de Entrega
-1. **README.md detalhado contendo:**
-   * Instruções passo a passo de como rodar o Backend, Frontend e o banco de dados MySQL localmente.
-   * Script, comando ou instrução de Seed para a criação do primeiro **Super Admin** no banco de dados.
-   * Documentação simplificada dos endpoints principais (ou export do arquivo JSON do Postman/Insomnia).
-2. **Link do Repositório.**
-3. **Deploy na Vercel (obrigatório):**
-   * O Frontend deve estar publicado na [Vercel](https://vercel.com) e acessível via URL pública para que a equipe possa avaliar o funcionamento da aplicação sem precisar rodar o projeto localmente.
-   * Inclua no README o link do deploy (ex.: `https://seu-projeto.vercel.app`).
-   * Variáveis de ambiente sensíveis (URL da API, chaves JWT etc.) devem ser configuradas nas **Environment Variables** do projeto na Vercel — nunca commitadas no repositório.
-   * O Backend pode ser hospedado em qualquer serviço de sua preferência (Railway, Render, Fly.io, AWS EC2 Free Tier etc.); inclua também o link base da API no README.
+## Migrations
+
+```bash
+cd backend
+
+# Gerar nova migration a partir das entidades
+npm run migration:generate -- -d src/database/data-source.ts -n NomeDaMigration
+
+# Executar migrations pendentes
+npm run migration:run
+
+# Reverter a última migration
+npm run migration:revert
+```
+
+Em desenvolvimento, o banco é sincronizado automaticamente (`synchronize: true`). Em produção, defina `NODE_ENV=production` e as migrations serão usadas.
 
 ---
 
-Boa sorte! Avaliaremos o seu teste com o mesmo rigor técnico aplicado no dia a dia da nossa engenharia.
+## AWS S3 (diferencial)
+
+O armazenamento de arquivos suporta dois modos:
+
+**Local (padrão):** uploads salvos em `./uploads/texts/` e `./uploads/images/`. Não requer configuração adicional.
+
+**AWS S3 (Free Tier):** quando as variáveis `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e `AWS_S3_BUCKET` estão configuradas, todos os uploads vão direto para o S3. Os arquivos ficam acessíveis via URL pública do S3. O ServeStatic local é desativado automaticamente.
+
+Para configurar o bucket S3:
+
+```bash
+# Crie o bucket no console AWS ou via CLI
+aws s3 mb s3://nome-do-bucket --region us-east-1
+
+# Configure a política de acesso público (para servir arquivos diretamente)
+# Veja: docs/s3-bucket-policy.json
+```
+
+---
+
+## Endpoints principais
+
+| Método | Rota | Auth | Role |
+|---|---|---|---|
+| POST | `/auth/login` | — | — |
+| POST | `/auth/activate` | — | — |
+| GET | `/auth/validate-token?token=` | — | — |
+| POST | `/invitations/owner` | JWT | super_admin |
+| POST | `/invitations/user` | JWT | owner |
+| GET | `/invitations` | JWT | super_admin, owner |
+| GET | `/invitations/stats` | JWT | super_admin, owner |
+| GET | `/users/org-members` | JWT | owner, user |
+| POST | `/files/upload/text` | JWT | owner, user |
+| POST | `/files/upload/image` | JWT | owner, user |
+| GET | `/files` | JWT | owner, user |
+| GET | `/files/search?q=` | JWT | owner, user |
+| PATCH | `/files/:id` | JWT | owner, user |
+| DELETE | `/files/:id` | JWT | owner |
+| POST | `/file-shares/:fileId` | JWT | owner, user |
+| GET | `/file-shares/:fileId` | JWT | owner, user |
+| DELETE | `/file-shares/revoke/:shareId` | JWT | owner, user |
+
+Documentação completa via Swagger em `/api/docs`.
+
+---
+
+## Testes
+
+```bash
+cd backend
+npm test
+# 24 testes unitários — 3 suites (auth, files, invitations)
+```
+
+---
+
+## Deploy
+
+### Frontend → Vercel
+
+1. Importe o repositório na Vercel
+2. Configure o diretório raiz como `frontend`
+3. Adicione a variável de ambiente `VITE_API_URL=https://sua-api.railway.app`
+4. Deploy automático a cada push na main
+
+### Backend → Railway / AWS EC2
+
+**Railway:**
+```bash
+railway login
+railway init
+railway up
+# Configure as variáveis de ambiente no dashboard
+```
+
+**AWS EC2 (Free Tier — t2.micro):**
+```bash
+# No servidor:
+git clone <repo>
+cd backend
+cp .env.example .env  # edite as vars
+npm ci
+npm run build
+npm run migration:run
+npm start
+```
+
+O `Dockerfile` incluído pode ser usado para qualquer ambiente com suporte a contêiner.
+
+---
+
+## Fluxo de uso
+
+```
+Super Admin → POST /invitations/owner
+           ← token UUID (48h)
+
+Owner ativa conta → POST /auth/activate (+ nome da organização)
+                 ← JWT
+
+Owner → POST /invitations/user
+      ← token UUID (48h)
+
+User ativa conta → POST /auth/activate
+               ← JWT
+
+Owner/User → upload, compartilhamento, filtros
+```
