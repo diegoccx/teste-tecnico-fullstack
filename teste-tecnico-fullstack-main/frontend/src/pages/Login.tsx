@@ -20,6 +20,10 @@ export default function Login() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      email: 'admin@intellux.com',
+      password: 'Admin@123456',
+    },
   });
 
   const onSubmit = async (data: FormData) => {
