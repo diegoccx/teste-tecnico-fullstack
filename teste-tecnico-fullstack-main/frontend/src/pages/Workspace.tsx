@@ -33,7 +33,7 @@ export default function Workspace() {
   const loadFiles = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { type: tab };
+      const params: Record<string, string> = {};
       if (filterStart) params.startDate = filterStart;
       if (filterEnd) params.endDate = filterEnd;
       if (isOwner && filterUser) params.uploadedById = filterUser;
@@ -43,7 +43,7 @@ export default function Workspace() {
       setError(err.response?.data?.message || 'Erro ao carregar arquivos');
     }
     setLoading(false);
-  }, [tab, filterStart, filterEnd, filterUser, isOwner]);
+  }, [filterStart, filterEnd, filterUser, isOwner]);
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
@@ -55,7 +55,7 @@ export default function Workspace() {
     if (!searchQ.trim()) { loadFiles(); return; }
     setLoading(true);
     try {
-      const res = await filesApi.search(searchQ, tab);
+      const res = await filesApi.search(searchQ);
       setFiles(res.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao pesquisar arquivos');
