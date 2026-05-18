@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Layout from '../components/Layout';
 import UploadModal from '../components/UploadModal';
 import ShareModal from '../components/ShareModal';
@@ -52,15 +52,7 @@ export default function Workspace() {
   }, [isOwner]);
 
   const handleSearch = async () => {
-    if (!searchQ.trim()) { loadFiles(); return; }
-    setLoading(true);
-    try {
-      const res = await filesApi.search(searchQ);
-      setFiles(res.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao pesquisar arquivos');
-    }
-    setLoading(false);
+    setSearchQ(searchQ.trim());
   };
 
   const handleDelete = async (id: string) => {
@@ -78,7 +70,12 @@ export default function Workspace() {
 
   const textFiles = files.filter(f => f.type === 'text');
   const imageFiles = files.filter(f => f.type === 'image');
-  const displayed = tab === 'text' ? textFiles : imageFiles;
+  const searchedTextFiles = useMemo(() => {
+    const query = searchQ.trim().toLowerCase();
+    if (!query) return textFiles;
+    return textFiles.filter(f => f.originalName.toLowerCase().includes(query));
+  }, [textFiles, searchQ]);
+  const displayed = tab === 'text' ? searchedTextFiles : imageFiles;
 
   return (
     <Layout>
