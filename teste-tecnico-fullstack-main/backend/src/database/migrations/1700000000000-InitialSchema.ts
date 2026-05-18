@@ -8,9 +8,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE \`organizations\` (
         \`id\` varchar(36) NOT NULL,
         \`name\` varchar(200) NOT NULL,
-        \`isActive\` tinyint NOT NULL DEFAULT 1,
-        \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
         PRIMARY KEY (\`id\`)
       ) ENGINE=InnoDB
     `);
@@ -18,17 +16,17 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE \`users\` (
         \`id\` varchar(36) NOT NULL,
-        \`name\` varchar(200) NOT NULL,
+        \`name\` varchar(150) NOT NULL,
         \`email\` varchar(200) NOT NULL,
-        \`passwordHash\` varchar(255) NOT NULL,
+        \`password_hash\` varchar(255) NOT NULL,
         \`role\` enum('super_admin','owner','user') NOT NULL DEFAULT 'user',
-        \`isActive\` tinyint NOT NULL DEFAULT 0,
-        \`organizationId\` varchar(36) NULL,
-        \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`organization_id\` varchar(36) NULL,
+        \`is_active\` tinyint NOT NULL DEFAULT 0,
+        \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
         UNIQUE INDEX \`IDX_users_email\` (\`email\`),
         PRIMARY KEY (\`id\`),
-        CONSTRAINT \`FK_users_organization\` FOREIGN KEY (\`organizationId\`) REFERENCES \`organizations\` (\`id\`) ON DELETE SET NULL
+        CONSTRAINT \`FK_users_organization\` FOREIGN KEY (\`organization_id\`) REFERENCES \`organizations\` (\`id\`) ON DELETE CASCADE
       ) ENGINE=InnoDB
     `);
 
@@ -36,57 +34,58 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE \`invitations\` (
         \`id\` varchar(36) NOT NULL,
         \`email\` varchar(200) NOT NULL,
-        \`token\` varchar(100) NOT NULL,
-        \`role\` enum('owner','user') NOT NULL,
+        \`token\` varchar(255) NOT NULL,
+        \`role\` enum('super_admin','owner','user') NOT NULL,
+        \`organization_id\` varchar(36) NULL,
+        \`invited_by_id\` varchar(36) NOT NULL,
+        \`expires_at\` datetime NOT NULL,
+        \`accepted_at\` datetime NULL,
         \`status\` enum('pending','accepted','expired') NOT NULL DEFAULT 'pending',
-        \`expiresAt\` datetime NOT NULL,
-        \`organizationId\` varchar(36) NULL,
-        \`invitedById\` varchar(36) NULL,
-        \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
         UNIQUE INDEX \`IDX_invitations_token\` (\`token\`),
         PRIMARY KEY (\`id\`),
-        CONSTRAINT \`FK_invitations_organization\` FOREIGN KEY (\`organizationId\`) REFERENCES \`organizations\` (\`id\`) ON DELETE CASCADE,
-        CONSTRAINT \`FK_invitations_invitedBy\` FOREIGN KEY (\`invitedById\`) REFERENCES \`users\` (\`id\`) ON DELETE SET NULL
+        CONSTRAINT \`FK_invitations_organization\` FOREIGN KEY (\`organization_id\`) REFERENCES \`organizations\` (\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`FK_invitations_invitedBy\` FOREIGN KEY (\`invited_by_id\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
       ) ENGINE=InnoDB
     `);
 
     await queryRunner.query(`
-      CREATE TABLE \`drive_files\` (
+      CREATE TABLE \`files\` (
         \`id\` varchar(36) NOT NULL,
-        \`originalName\` varchar(500) NOT NULL,
-        \`storedName\` varchar(500) NOT NULL,
-        \`filePath\` varchar(1000) NOT NULL,
-        \`mimeType\` varchar(100) NOT NULL,
-        \`size\` int NOT NULL,
+        \`original_name\` varchar(500) NOT NULL,
+        \`stored_name\` varchar(500) NOT NULL,
+        \`file_path\` varchar(1000) NOT NULL,
+        \`size\` bigint NOT NULL,
+        \`mime_type\` varchar(200) NOT NULL,
         \`type\` enum('text','image') NOT NULL,
-        \`organizationId\` varchar(36) NOT NULL,
-        \`uploadedById\` varchar(36) NOT NULL,
-        \`uploadedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`organization_id\` varchar(36) NOT NULL,
+        \`uploaded_by_id\` varchar(36) NOT NULL,
+        \`uploaded_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
         PRIMARY KEY (\`id\`),
-        CONSTRAINT \`FK_drive_files_organization\` FOREIGN KEY (\`organizationId\`) REFERENCES \`organizations\` (\`id\`) ON DELETE CASCADE,
-        CONSTRAINT \`FK_drive_files_uploadedBy\` FOREIGN KEY (\`uploadedById\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
+        CONSTRAINT \`FK_files_organization\` FOREIGN KEY (\`organization_id\`) REFERENCES \`organizations\` (\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`FK_files_uploadedBy\` FOREIGN KEY (\`uploaded_by_id\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
       ) ENGINE=InnoDB
     `);
 
     await queryRunner.query(`
       CREATE TABLE \`file_shares\` (
         \`id\` varchar(36) NOT NULL,
-        \`fileId\` varchar(36) NOT NULL,
-        \`sharedWithId\` varchar(36) NOT NULL,
-        \`sharedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        UNIQUE INDEX \`IDX_file_shares_unique\` (\`fileId\`, \`sharedWithId\`),
+        \`file_id\` varchar(36) NOT NULL,
+        \`shared_by_id\` varchar(36) NOT NULL,
+        \`shared_with_id\` varchar(36) NOT NULL,
+        \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        UNIQUE INDEX \`IDX_file_shares_unique\` (\`file_id\`, \`shared_with_id\`),
         PRIMARY KEY (\`id\`),
-        CONSTRAINT \`FK_file_shares_file\` FOREIGN KEY (\`fileId\`) REFERENCES \`drive_files\` (\`id\`) ON DELETE CASCADE,
-        CONSTRAINT \`FK_file_shares_sharedWith\` FOREIGN KEY (\`sharedWithId\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
+        CONSTRAINT \`FK_file_shares_file\` FOREIGN KEY (\`file_id\`) REFERENCES \`files\` (\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`FK_file_shares_sharedBy\` FOREIGN KEY (\`shared_by_id\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`FK_file_shares_sharedWith\` FOREIGN KEY (\`shared_with_id\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
       ) ENGINE=InnoDB
     `);
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS \`file_shares\``);
-    await queryRunner.query(`DROP TABLE IF EXISTS \`drive_files\``);
+    await queryRunner.query(`DROP TABLE IF EXISTS \`files\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`invitations\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`users\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`organizations\``);

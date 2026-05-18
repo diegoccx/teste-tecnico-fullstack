@@ -1,5 +1,102 @@
 # Intellux Drive
 
+Sistema de gerenciamento de arquivos multi-tenant com convites hierarquicos, RBAC e isolamento por organizacao.
+
+## Deploy
+
+- Frontend: https://teste-tecnico-fullstack-mqth.vercel.app
+- Backend/API: https://intellux-drive-api.onrender.com
+- Swagger: https://intellux-drive-api.onrender.com/api/docs
+- Repositorio: https://github.com/diegoccx/teste-tecnico-fullstack
+
+Credenciais de avaliacao:
+
+```text
+E-mail: admin@intellux.com
+Senha: Admin@123456
+```
+
+Observacao: a API esta no plano gratuito do Render e pode demorar alguns segundos para responder na primeira chamada apos inatividade.
+
+## Como Rodar Localmente
+
+### Banco MySQL
+
+Crie o banco e usuario:
+
+```sql
+CREATE DATABASE IF NOT EXISTS intellux_drive CHARACTER SET utf8mb4;
+CREATE USER IF NOT EXISTS 'intellux'@'%' IDENTIFIED BY 'intellux123';
+GRANT ALL PRIVILEGES ON intellux_drive.* TO 'intellux'@'%';
+FLUSH PRIVILEGES;
+```
+
+### Backend
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+npm run migration:run
+npm run seed
+npm run start:dev
+```
+
+API local: http://localhost:3001  
+Swagger local: http://localhost:3001/api/docs
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App local: http://localhost:5173
+
+Em producao, configure as variaveis sensiveis nos paineis da Vercel/Render. Nao commitar `.env`.
+
+## Seed
+
+```bash
+cd backend
+npm run seed
+```
+
+Cria o Super Admin:
+
+```text
+E-mail: admin@intellux.com
+Senha: Admin@123456
+```
+
+## Endpoints Principais
+
+| Metodo | Rota | Auth | Role |
+|---|---|---|---|
+| POST | `/auth/login` | Nao | Publico |
+| POST | `/auth/activate` | Nao | Publico |
+| GET | `/auth/validate-token?token=` | Nao | Publico |
+| POST | `/invitations/owner` | JWT | super_admin |
+| POST | `/invitations/user` | JWT | owner |
+| GET | `/invitations` | JWT | super_admin, owner |
+| GET | `/invitations/stats` | JWT | super_admin, owner |
+| GET | `/users/org-members` | JWT | owner, user |
+| POST | `/files/upload/text` | JWT | owner, user |
+| POST | `/files/upload/image` | JWT | owner, user |
+| GET | `/files` | JWT | owner, user |
+| GET | `/files/search?q=` | JWT | owner, user |
+| PATCH | `/files/:id` | JWT | owner, user |
+| DELETE | `/files/:id` | JWT | owner |
+| POST | `/file-shares/:fileId` | JWT | owner, user |
+| GET | `/file-shares/:fileId` | JWT | owner, user |
+| DELETE | `/file-shares/revoke/:shareId` | JWT | owner, user |
+
+---
+
+# Full Stack Challenge: Multi-Tenant Invitation & Micro-CMS System
+
 Sistema de gerenciamento de arquivos multi-tenant com hierarquia de convites. Cada organização tem isolamento completo de dados — arquivos, usuários e compartilhamentos nunca cruzam boundaries entre tenants.
 
 > **Deploy:** https://teste-tecnico-fullstack-mqth.vercel.app · 

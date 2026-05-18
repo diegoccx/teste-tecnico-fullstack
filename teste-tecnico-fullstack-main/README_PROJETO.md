@@ -2,9 +2,7 @@
 
 Sistema de gerenciamento de arquivos multi-tenant com hierarquia de convites. Cada organização tem isolamento completo de dados — arquivos, usuários e compartilhamentos nunca cruzam boundaries entre tenants.
 
-> **Deploy:** [https://intellux-drive.vercel.app](https://intellux-drive.vercel.app) · API: [https://intellux-drive-api.up.railway.app](https://intellux-drive-api.up.railway.app)
->
-> *(URLs de exemplo — substitua com seus links reais após o deploy)*
+> **Deploy:** [https://teste-tecnico-fullstack-mqth.vercel.app](https://teste-tecnico-fullstack-mqth.vercel.app) · API: [https://intellux-drive-api.onrender.com](https://intellux-drive-api.onrender.com)
 
 ---
 
